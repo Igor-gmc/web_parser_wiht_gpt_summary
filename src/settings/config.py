@@ -16,9 +16,10 @@ class settings:
     SELENIUM_TIMEOUT = 10  # seconds
     RETRIES = 3 # количество попыток при неудаче
     MAX_ARTICLES = 50 # сколько превью обрабатывать за запуск
+    RESULTS_PARSE_OUTPUT_NAME: Path = Path("parser_result.jsonl")
     
     WORKDIR: Path = Path(".data") # рабоочая директория
-    OUTPUT_NAME: Path = Path("output.jsonl") # Имя готового файла с обработанными данными
+    RESULT_OUTPUT_NAME: Path = Path("output.jsonl") # Имя готового файла с обработанными данными
     LOG_PATH: Path = Path("logs/app.log") # Путь к лог файлу
 
     ENABLE_SEMANTIC = True # опционально: семантический анализ с LLM и записать в jsonl, если False, то анализ статьи строго по ключевым словам
@@ -27,6 +28,7 @@ class settings:
     LLM_TEMPERATURE = 0.1 # креативность ответов LLM
     MAX_TOKENS = 1500 # максимальное количество токенов в ответе LLM
     SEMANTIC_THRESHOLD = 0.75 # порог похожести для семантичес
+    RESULT_LLM_NAME: Path = Path("llm_result.jsonl")
     
     LOG_MAX_BYTES = 10 * 1024 * 1024 # максимальный размер лог файла в байтах
     CLEANUP_LOG_ON_START = True # лог удаляется при старте программы
@@ -34,13 +36,13 @@ class settings:
     # Прописываем вычисляемые пути
     @property
     def OUTPUT_PATH(self) -> Path:
-        return self.WORKDIR / self.OUTPUT_NAME # полный путь к готовому файлу jsonl с обработанными данными
+        return self.WORKDIR / self.RESULT_OUTPUT_NAME # полный путь к готовому файлу jsonl с обработанными данными
     
     @property
-    def CACHE_LLM_DIR(self) -> Path:
-        return self.WORKDIR / "cache/llm" # директория для кеша LLM ответов
+    def DATA_LLM_PATH(self) -> Path:
+        return self.WORKDIR / self.RESULT_LLM_NAME # для LLM ответов
     
     @property
-    def CACHE_PAGES_DIR(self) -> Path:
-        return self.WORKDIR / "cache/pages" # директория для кеша загруженных страниц
+    def DATA_PAGES_PATH(self) -> Path:
+        return self.WORKDIR / self.RESULTS_PARSE_OUTPUT_NAME # для данных загруженных страниц
     

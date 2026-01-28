@@ -1,8 +1,6 @@
  # извлекает из страницы список превью (дата/заголовок/ссылка/текст)
 
 import json
-from math import e
-from turtle import save
 
 from selenium import webdriver
 from selenium.common import TimeoutException
@@ -11,6 +9,7 @@ from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.wait import WebDriverWait
+from selenium.webdriver.remote.webelement import WebElement
 
 from src.settings.config import settings
 
@@ -19,6 +18,33 @@ def get_driver() -> Chrome:
     driver.get(settings.FEED_URL) # Открытие страницы с статьями
     return driver
 
+def parse_data_from_post(post: WebElement) -> dict:
+    """Функция парсит данные с одного поста
+
+    Args:
+        post (WebElement): Получаем WebElement
+
+    Returns:
+        dict: Отдаем словарь с заголовком и текстом статьи
+    """
+    # Ищем тег заголовок a
+    a = post.find_element(By.CSS_SELECTOR, 'a[data-test-id="article-snippet-title-link"]')
+    title = a.text.strip()
+
+    # Ищем превью текст статьи
+    text_container = post.find_element(By.CSS_SELECTOR, '.article-formatted-body.article-formatted-body_version-2')
+    ps = text_container.find_elements(By.TAG_NAME, 'p')
+
+    text = ''
+    # Соберем текст в строку
+    for p in ps:
+        text += p.text.strip()
+
+    return {
+        'title': title,
+        'text': text
+    }
+    
 
 
 def scroll_and_find_posts(driver: Chrome) -> list:
@@ -28,7 +54,7 @@ def scroll_and_find_posts(driver: Chrome) -> list:
         driver (Chrome): driver.Chrome() Silenium
 
     Returns:
-        list: список превью статей
+        list: список словарей с зоголовком и текстом статьи
     """
     
     target = settings.MAX_ARTICLES # сколько статей нужно собрать
@@ -60,8 +86,8 @@ def scroll_and_find_posts(driver: Chrome) -> list:
             if no_grow_count >= 3: # если за 3 итерации не было прироста, выходим
                 print(f"Прирост превью статей отсутствует, собрано: {count}")
                 break
-            else:
-                no_grow_count = 0
+        else:
+            no_grow_count = 0
         
         preview_count = count
 
@@ -72,19 +98,32 @@ def scroll_and_find_posts(driver: Chrome) -> list:
         except TimeoutException:
             print("Превышено время ожидания подгружаемых новых статей")
             break
+    
+    result = [] # тут будет список спаршенных данных
 
-    return posts # Возвращаем список найденных превью статей
+    for post in posts:
+        data = parse_data_from_post(post) # Получаем данные с сайта в виде словаря
+        result.append(data) # Склабываем в список словари
 
-def save_posts_to_cache(posts: list) -> None:
-    pass
+    return result
 
-def main():
-    driver = get_driver()
-    posts = scroll_and_find_posts(driver)
-    save_posts_to_cache(posts)
+def habr_parser() -> list[dict]:
+    driver = get_driver() # Получаем драйвер
+    result = scroll_and_find_posts(driver) # Получаем результат парсинга
     driver.quit()
+    return result
 
 if __name__ == "__main__":
-    main()
+    data = habr_parser()
+    print(f"Собрано статей: {len(data)}")
+    for i, d in enumerate(data, 1):
+        # Безопасный вывод для консоли Windows
+        title = d['title'].encode('cp1251', errors='replace').decode('cp1251')
+        text = d['text'].encode('cp1251', errors='replace').decode('cp1251')
+        print(f"\n{'='*50}")
+        print(f"Статья {i}:")
+        print(f"Заголовок: {title}")
+        print(f"Текст: {text}")
+        print('='*50)
 
 
