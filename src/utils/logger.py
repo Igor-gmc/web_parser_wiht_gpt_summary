@@ -1,0 +1,1 @@
+# logging + RotatingFileHandler 10MB + cleanup при выходе

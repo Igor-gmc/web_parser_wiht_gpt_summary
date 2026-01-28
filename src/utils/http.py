@@ -1,0 +1,1 @@
+# requests-сессия, headers, retries
