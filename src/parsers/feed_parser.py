@@ -6,16 +6,20 @@ from selenium import webdriver
 from selenium.common import TimeoutException
 from selenium.webdriver import Chrome, Keys
 from selenium.webdriver.chrome.service import Service
+from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.wait import WebDriverWait
 from selenium.webdriver.remote.webelement import WebElement
 
 from src.settings.config import settings
+from src.storage.json_store import write_json_result_parse
 
 def get_driver() -> Chrome:
-    driver = webdriver.Chrome() # Инициализация драйвера
-    driver.get(settings.FEED_URL) # Открытие страницы с статьями
+    options = Options()
+    options.add_argument(f"user-agent={settings.USER_AGENT}")
+    driver = webdriver.Chrome(options=options)
+    driver.get(settings.FEED_URL)
     return driver
 
 def parse_data_from_post(post: WebElement) -> dict:
@@ -27,22 +31,50 @@ def parse_data_from_post(post: WebElement) -> dict:
     Returns:
         dict: Отдаем словарь с заголовком и текстом статьи
     """
-    # Ищем тег заголовок a
-    a = post.find_element(By.CSS_SELECTOR, 'a[data-test-id="article-snippet-title-link"]')
-    title = a.text.strip()
-
-    # Ищем превью текст статьи
-    text_container = post.find_element(By.CSS_SELECTOR, '.article-formatted-body.article-formatted-body_version-2')
-    ps = text_container.find_elements(By.TAG_NAME, 'p')
-
+    date = ''
+    title = ''
     text = ''
-    # Соберем текст в строку
-    for p in ps:
-        text += p.text.strip()
+    url = ''
+
+    try:
+        # Ищем дату публикации из атрибута datetime тега time
+        time_element = post.find_element(By.CSS_SELECTOR, 'a.tm-article-datetime-published time')
+        date = time_element.get_attribute('datetime')
+    except Exception as e:
+        print(f"  [ОШИБКА] Не найдена дата: {e}")
+
+    try:
+        # Ищем заголовок (текст внутри span в ссылке)
+        title_span = post.find_element(By.CSS_SELECTOR, 'a[data-test-id="article-snippet-title-link"] span')
+        title = title_span.text.strip()
+    except Exception as e:
+        print(f"  [ОШИБКА] Не найден заголовок: {e}")
+
+    try:
+        # Ищем превью текст статьи
+        text_container = post.find_element(By.CSS_SELECTOR, '.article-formatted-body_version-2')
+        ps = text_container.find_elements(By.TAG_NAME, 'p')
+        text = ''.join(p.text.strip() for p in ps)
+    except Exception as e:
+        print(f"  [ОШИБКА] Не найден текст: {e}")
+
+    try:
+        # Ищем URL статьи из ссылки "Читать далее"
+        readmore_link = post.find_element(By.CSS_SELECTOR, 'a.readmore')
+        href = readmore_link.get_attribute('href')
+        # Если href относительный, добавляем базовый URL
+        if href.startswith('/'):
+            url = f"https://habr.com{href}"
+        else:
+            url = href
+    except Exception as e:
+        print(f"  [ОШИБКА] Не найден URL: {e}")
 
     return {
+        'date': date,
         'title': title,
-        'text': text
+        'text': text,
+        'url': url
     }
     
 
@@ -110,6 +142,7 @@ def scroll_and_find_posts(driver: Chrome) -> list:
 def habr_parser() -> list[dict]:
     driver = get_driver() # Получаем драйвер
     result = scroll_and_find_posts(driver) # Получаем результат парсинга
+    write_json_result_parse(str(settings.DATA_PAGES_PATH), result)
     driver.quit()
     return result
 

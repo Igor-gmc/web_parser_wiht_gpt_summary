@@ -1,6 +1,6 @@
 # совпадения по ключевым словам (preview/fulltext)
 
-from src.settings import settings
+from src.settings.config import settings
 from src.models.shemas import ShemaResult
 
 def keywords_matcher(text: str) -> ShemaResult:

@@ -1,6 +1,6 @@
 # LLM/embeddings: “похоже по смыслу на KEYWORDS?”
 
-from llm.client import get_llm_client, analyze_with_llm
+from src.llm.client import get_llm_client, analyze_with_llm
 from src.models.shemas import ShemaResult
 
 def semantic_matcher(article_text: str) -> ShemaResult:
