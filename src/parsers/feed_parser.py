@@ -18,6 +18,7 @@ from src.storage.json_store import write_json_result_parse
 def get_driver() -> Chrome:
     options = Options()
     options.add_argument(f"user-agent={settings.USER_AGENT}")
+    options.add_argument("--no-sandbox")
     driver = webdriver.Chrome(options=options)
     driver.get(settings.FEED_URL)
     return driver
@@ -140,11 +141,18 @@ def scroll_and_find_posts(driver: Chrome) -> list:
     return result
 
 def habr_parser() -> list[dict]:
-    driver = get_driver() # Получаем драйвер
-    result = scroll_and_find_posts(driver) # Получаем результат парсинга
-    write_json_result_parse(str(settings.DATA_PAGES_PATH), result)
-    driver.quit()
-    return result
+    driver = None
+    try:
+        driver = get_driver()
+        result = scroll_and_find_posts(driver)
+        write_json_result_parse(str(settings.DATA_PAGES_PATH), result)
+        return result
+    except Exception as e:
+        print(f"[ОШИБКА] Парсинг завершился с ошибкой: {e}")
+        return []
+    finally:
+        if driver:
+            driver.quit()
 
 if __name__ == "__main__":
     data = habr_parser()

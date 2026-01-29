@@ -9,7 +9,7 @@ load_dotenv()  # загрузка переменных окружения из .
 
 @dataclass(frozen=True)
 class Settings:
-    KEYWORDS: list[str] = field(default_factory=lambda: ["SQL", "Игра", "Программирование"])
+    KEYWORDS: list[str] = field(default_factory=lambda: ["дизайн", "фото", "web", "python"])
     FEED_URL: str = "https://habr.com/ru/articles/"
     USER_AGENT: str = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36"
     SELENIUM_TIMEOUT: int = 15  # seconds
@@ -22,7 +22,7 @@ class Settings:
     CLEAR_OUTPUT_NAME: Path = Path("clear_output.jsonl") # Только статьи с совпадениями
     LOG_PATH: Path = Path("logs/app.log") # Путь к лог файлу
 
-    ENABLE_SEMANTIC: bool = True # опционально: семантический анализ с LLM и записать в jsonl, если False, то анализ статьи строго по ключевым словам
+    ENABLE_SEMANTIC: bool = False # опционально: семантический анализ с LLM и записать в jsonl, если False, то анализ статьи строго по ключевым словам
     LLM_MODEL: str = "gpt-4o-mini" # модель LLM для анализа
     OPENAI_API_KEY_ENV: str = "OPENAI_API_KEY"
     LLM_TEMPERATURE: float = 0.1 # креативность ответов LLM
